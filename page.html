@@ -1,0 +1,184 @@
+"use client"
+
+import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/components/ui/use-toast"
+import { useCart } from "@/lib/cart-context"
+
+export default function CartPage() {
+  const { cart, updateQuantity, removeFromCart, clearCart } = useCart()
+  const { toast } = useToast()
+  const [subtotal, setSubtotal] = useState(0)
+
+  useEffect(() => {
+    const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
+    setSubtotal(total)
+  }, [cart])
+
+  const handleCheckout = () => {
+    toast({
+      title: "Order Placed!",
+      description: "Your order has been placed successfully.",
+    })
+    clearCart()
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-10 border-b bg-background">
+        <div className="container flex h-16 items-center justify-between py-4">
+          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+            <ShoppingBag className="h-6 w-6" />
+            <span>LocalMart</span>
+          </Link>
+        </div>
+      </header>
+      <main className="flex-1">
+        <div className="container px-4 py-10 md:px-6 md:py-12 lg:py-16">
+          <div className="flex flex-col gap-8">
+            <div>
+              <h1 className="text-3xl font-bold">Your Cart</h1>
+              <p className="text-muted-foreground">Review your items before checkout.</p>
+            </div>
+            {cart.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-12">
+                <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+                <h2 className="text-xl font-medium">Your cart is empty</h2>
+                <p className="text-center text-muted-foreground">
+                  Looks like you haven&apos;t added any products to your cart yet.
+                </p>
+                <Link href="/">
+                  <Button>Continue Shopping</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid gap-8 md:grid-cols-3">
+                <div className="md:col-span-2">
+                  <div className="rounded-lg border">
+                    <div className="p-6">
+                      <h2 className="text-xl font-semibold">Items ({cart.length})</h2>
+                    </div>
+                    <Separator />
+                    <ul className="divide-y">
+                      {cart.map((item) => (
+                        <li key={item.id} className="p-6">
+                          <div className="flex gap-4">
+                            <div className="relative h-24 w-24 overflow-hidden rounded-md">
+                              <Image
+                                src={item.image || "/placeholder.svg"}
+                                alt={item.name}
+                                fill
+                                className="object-cover"
+                                crossOrigin="anonymous"
+                              />
+                            </div>
+                            <div className="flex flex-1 flex-col gap-1">
+                              <h3 className="font-medium">{item.name}</h3>
+                              <p className="text-sm text-muted-foreground">{item.category}</p>
+                              <div className="mt-auto flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  <span className="w-8 text-center">{item.quantity}</span>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.id)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="font-medium">${item.price.toFixed(2)}</span>
+                              <span className="text-sm text-muted-foreground">
+                                ${(item.price * item.quantity).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <div>
+                  <div className="rounded-lg border">
+                    <div className="p-6">
+                      <h2 className="text-xl font-semibold">Order Summary</h2>
+                    </div>
+                    <Separator />
+                    <div className="p-6">
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                          <span>Subtotal</span>
+                          <span>${subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Shipping</span>
+                          <span>Free</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Tax</span>
+                          <span>${(subtotal * 0.1).toFixed(2)}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between font-medium">
+                          <span>Total</span>
+                          <span>${(subtotal + subtotal * 0.1).toFixed(2)}</span>
+                        </div>
+                        <Button className="w-full" onClick={handleCheckout}>
+                          Checkout
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+      <footer className="border-t py-6 md:py-8">
+        <div className="container flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-8">
+          <div className="flex flex-col gap-1">
+            <Link href="/" className="flex items-center gap-2 font-bold">
+              <ShoppingBag className="h-5 w-5" />
+              <span>LocalMart</span>
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              &copy; {new Date().getFullYear()} LocalMart. All rights reserved.
+            </p>
+          </div>
+          <div className="flex gap-4">
+            <Link href="#" className="text-sm text-muted-foreground hover:underline">
+              Terms of Service
+            </Link>
+            <Link href="#" className="text-sm text-muted-foreground hover:underline">
+              Privacy Policy
+            </Link>
+            <Link href="#" className="text-sm text-muted-foreground hover:underline">
+              Contact Us
+            </Link>
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
